@@ -1,20 +1,23 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import styled from 'styled-components';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
 import { getRowName, getSeatNum } from '../helpers';
 import { range } from '../utils';
 
+import { SeatContext } from "./SeatContext";
+import Seat from "./Seat";
+import PurchaseModal from "./PurchaseModal";
+
 const TicketWidget = () => {
-  // TODO: use values from Context
-  const numOfRows = 6;
-  const seatsPerRow = 6;
 
-  // TODO: implement the loading spinner <CircularProgress />
-  // with the hasLoaded flag
-
-  return (
+  const {state: {numOfRows, seatsPerRow, hasLoaded, seats}} = useContext(SeatContext);
+  
+  return (<>
+    {!hasLoaded ? <CircularProgress color="secondary" /> : 
+    
     <Wrapper>
+      <PurchaseModal />
       {range(numOfRows).map(rowIndex => {
         const rowName = getRowName(rowIndex);
 
@@ -23,17 +26,19 @@ const TicketWidget = () => {
             <RowLabel>Row {rowName}</RowLabel>
             {range(seatsPerRow).map(seatIndex => {
               const seatId = `${rowName}-${getSeatNum(seatIndex)}`;
+              const { price, isBooked } = seats[seatId];
 
               return (
                 <SeatWrapper key={seatId}>
-                  {/* TODO: Render the actual <Seat /> */}
+                  <Seat isBooked={isBooked} rowName={rowName} seatIndex={seatIndex} price={price} seatId={seatId} />
                 </SeatWrapper>
               );
             })}
           </Row>
         );
       })}
-    </Wrapper>
+    </Wrapper>}
+    </>
   );
 };
 
@@ -59,6 +64,7 @@ const RowLabel = styled.div`
 
 const SeatWrapper = styled.div`
   padding: 5px;
+  margin: auto;
 `;
 
 export default TicketWidget;
