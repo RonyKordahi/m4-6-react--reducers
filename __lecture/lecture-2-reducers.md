@@ -101,7 +101,7 @@ const Game = ({ count, dispatch }) => {
   return (
     <>
       <button onClick={() => dispatch({ type: 'INCREMENT' })}>Increment</button>
-      <button onClick={() => dispatch({ type: 'INCREMENT' })}>Decrement</button>
+      <button onClick={() => dispatch({ type: 'DECREMENT' })}>Decrement</button>
     </>
   );
 };
@@ -175,26 +175,26 @@ If not, what could be improved?
 ---
 
 ```js
-{ type: 'click-to-open-modal', state: { newModal: 'login' } }
+{ type: 'click-to-open-modal', state: { newModal: 'login' } } //better alternative = click-login-link
 ```
 
 ---
 
 ```js
-{ type: 'toggle-terms-of-service', agreed: true }
+{ type: 'toggle-terms-of-service', agreed: true } //fine
 ```
 
 ---
 
 ```js
-{ type: 'set-player-coordinates', x: 41, y: 22 }
+{ type: 'set-player-coordinates', x: 41, y: 22 } //better alternative = read-player-coords
 ```
 
 ---
 
 ```js
 {
-  event: 'logout';
+  event: 'logout'; // no type, put a "type: click-logout"
 }
 ```
 
@@ -299,6 +299,30 @@ const LightSwitch = () => {
   );
 };
 ```
+```jsx
+//answer
+const reducer = (state, action) => {
+  switch (action.type) {
+    case "TOGGLE_LIGHT": {
+      return !state;
+    }
+      
+    default:
+      throw new Error ("nope");
+  }
+}
+
+const LightSwitch = () => {
+  const [state, dispatch] = useReducer(reducer, false);
+
+  return (
+    <>
+      Light is {state ? 'on' : 'off'}.
+      <button onClick={() => dispatch("TOGGLE_LIGHT")}>Toggle</button>
+    </>
+  );
+};
+```
 
 ---
 
@@ -326,6 +350,51 @@ function App() {
   );
 }
 ```
+```jsx
+//answer
+function reducer = (state, action) => {
+  switch (action.type) {
+    case "REQUEST_DATA": {
+      return "loading";
+    }
+    
+    case "RECEIVE_DATA": {
+      return "idle";
+    }
+    
+    case "RECEIVE_ERROR": {
+      return "error";
+    }
+
+    default: {
+      throw new Error ("Nope.avi");
+    }
+  }
+}
+
+function App() {
+const [state, dispatch] = useReducer(reducer, "idle");
+
+  return (
+    <form
+      onSubmit={() => {
+        dispatch("REQUEST_DATA");
+
+        getStatusFromServer()
+          .then(() => {
+          dispatch("RECEIVE_DATA");
+          })
+          .catch(() => {
+            dispatch("RECEIVE_ERROR");
+          });
+      }}
+    >
+      Status is: {status}
+      <button>Submit</button>
+    </form>
+  );
+}
+```
 
 ---
 
@@ -340,6 +409,44 @@ export const ModalProvider = ({ children }) => {
       value={{
         currentModal,
         setCurrentModal,
+      }}
+    >
+      {children}
+    </ModalContext.Provider>
+  );
+};
+```
+```jsx
+//answer
+export const ModalContext = React.createContext(null);
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case "OPEN_MODAL": {
+      return action.modal;
+    }
+
+    case "CLOSE_MODAL": {
+      return null;
+    }
+
+    default: 
+    throw new Error ("Nope.avi");
+  }
+}
+
+export const ModalProvider = ({ children }) => {
+  const [state, dispatch] = useReducer(reducer, null);
+
+  const openModal = modal => dispatch({type: "OPEN_MODAL", modal});
+  const closeModal = modal => dispatch({type: "CLOSE_MODAL"});
+
+  return (
+    <ModalContext.Provider
+      value={{
+        currentModal: state,
+        openModal,
+        closeModal
       }}
     >
       {children}
@@ -523,6 +630,48 @@ const Game = () => {
   );
 };
 ```
+```jsx
+//answer
+const initialState = {points: 0, status: "idle"};
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case "WIN_POINT": {
+      return {...state, points: state.points + 1}
+    }
+
+    case "LOSE_POINT": {
+      return {...state, points: state.points - 1}
+    }
+
+    case "START_GAME": {
+      return {...state, status: "playing"}
+    }
+
+    default: 
+      throw new Error ("NOPE");
+  }
+
+}
+
+const Game = () => {
+  const [state, dispatch] = React.useReducer(reducer, initialState);
+  const { points, status } = state;
+
+  return (
+    <>
+      Your score: {points}.
+      {status === 'playing' && (
+        <>
+          <button onClick={() => dispatch(type: "WIN_POINT")}>🍓</button>
+          <button onClick={() => dispatch(type: "LOSE_POINT")}>💀</button>
+        </>
+      )}
+      <button onClick={() => dispatch(type: "START_GAME")}>Start game</button>
+    </>
+  );
+};
+```
 
 ---
 
@@ -561,6 +710,67 @@ const SignUpForm = () => {
           setFirstName('');
           setLastName('');
           setEmail('');
+        }}
+      >
+        Reset
+      </button>
+    </form>
+  );
+};
+```
+```jsx
+//answer
+import sendDataToServer from './some-madeup-place';
+import FormField from './some-other-madeup-place';
+const initialState = {
+  firstName: '',
+  lastName: '',
+  email: '',
+};
+function reducer(state, action) {
+  switch (action.type) {
+    case 'update-field': {
+      return {
+        ...state,
+        [action.key]: action.value,
+      };
+    }
+    case 'reset-form': {
+      return initialState;
+    }
+  }
+}
+
+const SignUpForm = () => {
+  const [state, dispatch] = React.useReducer(reducer, initialState);
+
+  const updateField = (key, value) =>
+    dispatch({ type: 'update-field', key, value });
+
+  const resetForm = () => dispatch({ type: 'reset-form', key, value });
+
+  return (
+    <form onSubmit={sendDataToServer}>
+      <FormField
+        label="First Name"
+        value={state.firstName}
+        onChange={ev => updateField('firstName', ev.target.value)}
+      />
+      <FormField
+        label="Last Name"
+        value={state.lastName}
+        onChange={ev => updateField('lastName', ev.target.value)}
+      />
+      <FormField
+        label="Email"
+        value={state.email}
+        onChange={ev => updateField('email', ev.target.value)}
+      />
+      <button>Submit</button>
+      <button
+        onClick={ev => {
+          ev.preventDefault();
+          resetForm();
         }}
       >
         Reset
